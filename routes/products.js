@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
-const { protect, admin } = require('../middleware/authMiddleware'); // Middleware de proteção importado
+const { protect, admin } = require('../middleware/authMiddleware');
 
 // ROTA: GET /api/products - Obter todos os produtos
-// Também suporta filtragem por categoria, ex: /api/products?category=Eletrônicos
 router.get('/', async (req, res) => {
   try {
     const { category } = req.query;
@@ -29,7 +28,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ROTA: POST /api/products - Adicionar um novo produto (Protegida para Admin)
+// ROTA: POST /api/products - Adicionar um novo produto (espera uma imageUrl no corpo)
 router.post('/', protect, admin, async (req, res) => {
   const { name, description, price, category, imageUrl, inStock, isFeatured } = req.body;
 
@@ -39,7 +38,7 @@ router.post('/', protect, admin, async (req, res) => {
       description,
       price,
       category,
-      imageUrl,
+      imageUrl, // Usando a URL do corpo da requisição
       inStock,
       isFeatured,
     });
@@ -51,13 +50,13 @@ router.post('/', protect, admin, async (req, res) => {
   }
 });
 
-// ROTA: PUT /api/products/:id - Atualizar um produto (Protegida para Admin)
+// ROTA: PUT /api/products/:id - Atualizar um produto (espera uma imageUrl no corpo)
 router.put('/:id', protect, admin, async (req, res) => {
   try {
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      { new: true, runValidators: true } // Retorna o documento atualizado e roda as validações do schema
+      req.body, // O corpo da requisição já contém a nova imageUrl, se houver
+      { new: true, runValidators: true }
     );
     if (!updatedProduct) {
       return res.status(404).json({ message: 'Produto não encontrado para atualização.' });
@@ -68,7 +67,7 @@ router.put('/:id', protect, admin, async (req, res) => {
   }
 });
 
-// ROTA: DELETE /api/products/:id - Deletar um produto (Protegida para Admin)
+// ROTA: DELETE /api/products/:id - Deletar um produto
 router.delete('/:id', protect, admin, async (req, res) => {
   try {
     const deletedProduct = await Product.findByIdAndDelete(req.params.id);
